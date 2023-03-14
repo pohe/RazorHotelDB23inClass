@@ -43,7 +43,10 @@
                     <td>
                         @item.Adresse
                     </td>
-                    <td> <a asp-page="DeleteHotel" asp-route-hotelnr="@item.HotelNr">Delete</a>   </td>
+                    <td> 
+                        <a asp-page="DeleteHotel" asp-route-hotelnr="@item.HotelNr">Delete</a>|
+                        <a asp-page="UpdateHotel" asp-route-hotelnr="@item.HotelNr">Update</a>
+                    </td>
                 </tr>
             }
         }

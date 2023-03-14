@@ -8,7 +8,7 @@ namespace RazorHotelDB23inClass.Services
     public class HotelService : Connection, IHotelService
     {
         private String queryString = "select * from Hotel";
-        private String queryStringFromID = "";
+        private String queryStringFromID = "select * from Hotel where Hotel_No = @ID";
         private String insertSql = "insert into Hotel Values (@ID, @Navn, @Adresse)";
         private String deleteSql = "";
         private String updateSql = "update Hotel " +
@@ -97,9 +97,40 @@ namespace RazorHotelDB23inClass.Services
             return hoteller;
         }
 
-        public Task<Hotel> GetHotelFromIdAsync(int hotelNr)
+        public async Task<Hotel> GetHotelFromIdAsync(int hotelNr)
         {
-            throw new NotImplementedException();
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                try
+                {
+                    SqlCommand commmand = new SqlCommand(queryStringFromID, connection);
+                    commmand.Parameters.AddWithValue("@ID", hotelNr);
+                    await commmand.Connection.OpenAsync();
+
+                    SqlDataReader reader = await commmand.ExecuteReaderAsync();
+                    if (await reader.ReadAsync())
+                    {
+                        int hotelNo = reader.GetInt32(0);
+                        string hotelNavn = reader.GetString(1);
+                        string hotelAdr = reader.GetString(2);
+                        Hotel hotel = new Hotel(hotelNo, hotelNavn, hotelAdr);
+                        return hotel;
+                    }
+                }
+                catch (SqlException sqlEx)
+                {
+                    Console.WriteLine("Database error " + sqlEx.Message);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Generel fejl " + ex.Message);
+                }
+                finally
+                {
+                    //her kommer man altid
+                }
+            }
+            return null;
         }
 
         public async Task<List<Hotel>> GetHotelsByNameAsync(string name)
@@ -138,9 +169,39 @@ namespace RazorHotelDB23inClass.Services
 
         }
 
-        public Task<bool> UpdateHotelAsync(Hotel hotel, int hotelNr)
+        public async Task<bool> UpdateHotelAsync(Hotel hotel, int hotelNr)
         {
-            throw new NotImplementedException();
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                using (SqlCommand command = new SqlCommand(updateSql, connection))
+                {
+                    command.Parameters.AddWithValue("@HotelID", hotel.HotelNr);
+                    command.Parameters.AddWithValue("@Navn", hotel.Navn);
+                    command.Parameters.AddWithValue("@Adresse", hotel.Adresse);
+                    command.Parameters.AddWithValue("@ID", hotelNr);
+                    try
+                    {
+                        command.Connection.Open();
+                        int noOfRows = await command.ExecuteNonQueryAsync(); //bruges ved update, delete, insert
+                        if (noOfRows == 1)
+                        {
+                            return true;
+                        }
+                        return false;
+                    }
+                    catch (SqlException sqlex)
+                    {
+                        Console.WriteLine("Database error");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Generel error");
+                    }
+                }
+            }
+            return false;
         }
     }
 }
+
